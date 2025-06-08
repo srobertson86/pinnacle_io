@@ -1,0 +1,66 @@
+Name = "RogueOne";
+VersionTimestamp = "2020-01-01 10:00:00";
+PhotonEnergyList ={
+  MachineEnergy ={
+    Value = 6;
+    Id = 0;
+    Name = "6X";
+    PhysicsData ={
+      OutputFactor ={
+        ReferenceDepth = 10;
+        SourceToCalibrationPointDistance = 100;
+        ElectronSSDTolerance = 0.1;
+        DosePerMuAtCalibration = 0.8074;
+        MinMLCPositionAtCalibration = 2;
+        CalculatedCalibrationDose = 0.0186649;
+      };
+    };
+  };
+  MachineEnergy ={
+    Value = 15;
+    Id = 1;
+    Name = "15X";
+    PhysicsData ={
+      OutputFactor ={
+        ReferenceDepth = 10;
+        SourceToCalibrationPointDistance = 100;
+        ElectronSSDTolerance = 0.1;
+        DosePerMuAtCalibration = 0.9303;
+        MinMLCPositionAtCalibration = 2;
+        CalculatedCalibrationDose = 0.016031;
+      };
+    };
+  };
+};
+ElectronEnergyList ={
+  MachineEnergy ={
+    Value = 6;
+    Id = 0;
+    Name = "6E";
+    PhysicsData ={
+      OutputFactor ={
+        ReferenceDepth = 1.4;
+        SourceToCalibrationPointDistance = 101.4;
+        ElectronSSDTolerance = 0.1;
+        DosePerMuAtCalibration = 1.001;
+        MinMLCPositionAtCalibration = 2;
+        CalculatedCalibrationDose = 0.798735;
+      };
+    };
+  };
+  MachineEnergy ={
+    Value = 9;
+    Id = 1;
+    Name = "9E";
+    PhysicsData ={
+      OutputFactor ={
+        ReferenceDepth = 2;
+        SourceToCalibrationPointDistance = 102;
+        ElectronSSDTolerance = 0.1;
+        DosePerMuAtCalibration = 1.003;
+        MinMLCPositionAtCalibration = 2;
+        CalculatedCalibrationDose = 0.806364;
+      };
+    };
+  };
+};

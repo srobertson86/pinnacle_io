@@ -1,0 +1,79 @@
+InstitutionID = 1;
+InstitutionPath = "Institution_1";
+PinnInstitutionPath = "Institution_1";
+Name = "16.2 Smart Enterprise";
+StreetAddress = "";
+StreetAddress2 = "";
+City = "";
+State = "";
+ZipCode = "";
+Country = "";
+PatientLiteList ={
+  PatientLite ={
+    PatientID = 1;
+    PatientPath = "Institution_1/Mount_0/Patient_1";
+    MountPoint = "Mount_0";
+    FormattedDescription = "LAST&&FIRST&&M&&000000&&TEST,MD&&2020-01-01 10:00:00";
+    DirSize = 750.131;
+  };
+};
+MountPointList ={
+  SimpleString ={
+    String = "Mount_0";
+  };
+  SimpleString ={
+    String = "Mount_1";
+  };
+};
+SelectedMachineDirList ={
+};
+BackupMachineList ={
+};
+BackupMachineListNonCommissioned ={
+};
+BackupIsotopeList ={
+};
+BackupIsotopeListNonCommissioned ={
+};
+DeviceSpaceRequiredPatients = 0;
+DeviceSpaceRequiredPhysics = 0;
+DeviceSpaceRequiredScripts = 0;
+DeviceSpaceRequiredOrganModels = 0;
+DeviceSpaceRequiredAtlas = 0;
+DefaultMountPoint = "Mount_0";
+BackupDescription = "";
+BackupVolume = "";
+BackupFileName = "";
+Session = "1";
+ScriptsDir = "";
+OrganModelsDir = "";
+AtlasFile = "";
+BackupTimeStamp = "";
+BackupDeviceType = "None";
+IsPatientBackup = 0;
+IsPhysicsMachinesBackup = 0;
+IncludePhysicsData = 0;
+MachinesInV7Format = 0;
+IsSolarisFormat = 1;
+IncludeAllPatients = 0;
+FullFileNameIncluded = 0;
+BackupID = 0;
+ObjectVersion ={
+  WriteVersion = "Launch Pad: 16.2";
+  CreateVersion = "Launch Pad: 16.0";
+  LoginName = "candor01";
+  CreateTimeStamp = "2020-01-01 10:00:00";
+  WriteTimeStamp = "2020-01-01 10:00:00";
+  LastModifiedTimeStamp = "2020-01-01.10:00:00";
+};
+DynamicRebuild = 0;
+ScorecardsBackupInfo ={
+  DeviceSpaceRequired = 0;
+  Dir = "";
+};
+TreatmentTechniquesBackupInfo ={
+  DeviceSpaceRequired = 0;
+  TreatmentTechniquesDir = "";
+};
+
+/* J */

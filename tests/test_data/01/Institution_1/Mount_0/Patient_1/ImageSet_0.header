@@ -1,0 +1,73 @@
+	byte_order = 0;
+	read_conversion = "";
+	write_conversion = "";
+	t_dim = 0;
+	x_dim = 512;
+	y_dim = 512;
+	z_dim = 101;
+	datatype = 1;
+	bitpix = 16;
+	bytes_pix = 2;
+	vol_max = 0.000000;
+	vol_min = 0.000000;
+	t_pixdim = 0.000000;
+	x_pixdim = 0.097656;
+	y_pixdim = 0.097656;
+	z_pixdim = 0.250000;
+	t_start = 0.000000;
+	x_start = -25.000000;
+	y_start = -74.902321;
+	z_start = -8.750000;
+	z_time = 0.000000;
+	dim_units : 
+	voxel_type : 
+	id = 0;
+	vis_only = 0;
+	data_type : 
+	vol_type : 
+	db_name : LAST^FIRST^M
+	medical_record : 
+	originator : 
+	date : 
+	scanner_id : 
+	patient_position : HFS
+	orientation = 0;
+	scan_acquisition = 0;
+	comment : 
+	fname_format : 
+	fname_index_start = 0;
+	fname_index_delta = 0;
+	binary_header_size = 0;
+	manufacturer : GE MEDICAL SYSTEMS
+	model : LightSpeed RT16
+	couch_pos = 0.000000;
+	couch_height = 28.100000;
+	X_offset = 0.000000;
+	Y_offset = 0.000000;
+	dataset_modified = 0;
+	study_id : 19263
+	exam_id : 564355138413375
+	patient_id : 000000
+	modality : CT
+	gating_type : 
+	gating_value : 
+	gating_UID : 
+	irradiation_event_UID : 
+	series_UID : 1.2.840.113619.2.55.3.3535481354.000.3513513585.000
+	Series_Description : HEAD
+	Scan_Options : HELICAL MODE
+	Low_Sag : unknown
+	Negative_Voxel : 
+	Station_Name : ctrt
+	KVP : 120
+	Exposure = 13.000000;
+	SeriesNumber = 3;
+	SeriesDateTime : 2020-01-01 10:00:00
+	Version : 16.0
+	x_start_dicom = -25.000000;
+	y_start_dicom = -24.902321;
+	binning_type : 
+	is_EEOV = 0;
+	is_OMAR = 0;
+	image_diameter = 500.000000;
+	has_couchheight = 0;

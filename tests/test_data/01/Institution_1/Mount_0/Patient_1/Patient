@@ -1,0 +1,103 @@
+PatientID = 10000;
+PatientPath = "Institution_1/Mount_0/Patient_1";
+LastName = "LAST";
+FirstName = "FIRST";
+MiddleName = "M";
+MedicalRecordNumber = "000000";
+EncounterNumber = "";
+PrimaryPhysician = "";
+AttendingPhysician = "";
+ReferringPhysician = "";
+RadiationOncologist = "TEST, MD";
+Oncologist = "";
+Radiologist = "";
+Prescription = "";
+Disease = "";
+Diagnosis = "";
+Comment = "CT TREATMENT PLANNING ";
+NextUniquePlanID = 4;
+NextUniqueImageSetID = 1;
+Gender = "Unknown";
+DateOfBirth = "2020-01-01";
+ImageSetList ={
+  ImageSet ={
+    ImageSetID = 0;
+    PatientID = 10000;
+    ImageName = "ImageSet_0";
+    NameFromScanner = "";
+    ExamID = "564355138413375";
+    StudyID = "10000";
+    Modality = "CT";
+    NumberOfImages = 101;
+    ScanTimeFromScanner = "2020-01-01 10:00:00";
+    FileName = "";
+    SeriesDescription = "HEAD";
+    MRN = "000000";
+    DOB = "";
+    GatingUId = "";
+    SeriesUID = "1.2.840.113619.2.55.3.3535481354.000.3513513585.000";
+  };
+};
+PulmoWaveCaptureList ={
+};
+PlanList ={
+  Plan ={
+    PlanID = 0;
+    ToolType = "Pinnacle^3";
+    PlanName = "BRAIN";
+    Physicist = "MAX WELLDOSE PHD";
+    Comment = "";
+    Dosimetrist = "DOSEY CALC CMD";
+    PrimaryCTImageSetID = 0;
+    FusionIDArray ={
+    };
+    PrimaryImageType = "Images";
+    PinnacleVersionDescription = "Pinnacle 16.0";
+    IsNewPlanPrefix = 1;
+    PlanIsLocked = 1;
+    OKForSyntegraInLaunchpad = 0;
+    ObjectVersion ={
+      WriteVersion = "Launch Pad: 16.2";
+      CreateVersion = "Launch Pad: 16.0";
+      LoginName = "candor01";
+      CreateTimeStamp = "2020-01-01 10:00:00";
+      WriteTimeStamp = "2020-01-01 10:00:00";
+      LastModifiedTimeStamp = "2020-01-01 10:00:00";
+    };
+  };
+  Plan ={
+    PlanID = 1;
+    ToolType = "Pinnacle^3";
+    PlanName = "CopyOf_1_BRAIN";
+    Physicist = "MAX WELLDOSE PHD";
+    Comment = "";
+    Dosimetrist = "DOSEY CALC CMD";
+    PrimaryCTImageSetID = 0;
+    FusionIDArray ={
+    };
+    PrimaryImageType = "Images";
+    PinnacleVersionDescription = "Pinnacle 16.0";
+    IsNewPlanPrefix = 1;
+    PlanIsLocked = 1;
+    OKForSyntegraInLaunchpad = 0;
+    ObjectVersion ={
+      WriteVersion = "Launch Pad: 16.2";
+      CreateVersion = "Launch Pad: 16.0";
+      LoginName = "candor01";
+      CreateTimeStamp = "2020-01-01 10:00:00";
+      WriteTimeStamp = "2020-01-01 10:00:00";
+      LastModifiedTimeStamp = "2020-01-01 10:00:00";
+    };
+  };
+};
+ObjectVersion ={
+  WriteVersion = "Launch Pad: 16.2";
+  CreateVersion = "Launch Pad: 16.2";
+  LoginName = "candor01";
+  CreateTimeStamp = "2020-01-01 10:00:00";
+  WriteTimeStamp = "2020-01-01 10:00:00";
+  LastModifiedTimeStamp = "";
+};
+DirSize = 100.000;
+
+/* ~ */

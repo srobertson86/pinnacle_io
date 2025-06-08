@@ -1,0 +1,29 @@
+Poi ={
+  Name = "iso";
+  XCoord = -1.20199;
+  YCoord = 1.89459;
+  ZCoord = 2;
+  XRotation = 0;
+  YRotation = 0;
+  ZRotation = 0;
+  Radius = 1;
+  Color = "red";
+  CoordSys = "CT";
+  CoordinateFormat = "%6.2f";
+  Display2d = "Off";
+  Display3d = "Off";
+  ObjectVersion ={
+    WriteVersion = "Pinnacle v16.0";
+    CreateVersion = "Pinnacle v16.0";
+    LoginName = "candor01";
+    CreateTimeStamp = "2020-01-01 10:00:00";
+    WriteTimeStamp = "2020-01-01 10:00:00";
+    LastModifiedTimeStamp = "";
+  };
+  VolumeName = "LAST^FIRST^M";
+  PoiInterpretedType = "MARKER";
+  PoiDisplayOnOtherVolumes = 1;
+  IsLocked = 0;
+};
+
+/* [* */
