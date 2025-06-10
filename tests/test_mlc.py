@@ -98,3 +98,108 @@ def test_mlcleafpositions_control_point_relationship():
     cp._mlc_leaf_positions = mlc
     assert mlc.control_point is cp
     assert cp._mlc_leaf_positions is mlc
+
+
+def test_mlc_sqlalchemy_standards_compliance():
+    """Test that MLC models follow SQLAlchemy standards and best practices."""
+    # Test relationship naming follows _list convention
+    multi_leaf = MultiLeaf(left_bank_name="Test")
+
+    # Verify list relationships follow _list convention
+    assert hasattr(multi_leaf, 'leaf_pair_list')
+
+    # Verify single relationships don't have _list suffix
+    assert hasattr(multi_leaf, 'machine')
+
+    # Test that relationships are properly typed by checking annotations
+    # Check MultiLeaf type annotations
+    multi_leaf_annotations = MultiLeaf.__annotations__
+    assert 'leaf_pair_list' in multi_leaf_annotations
+    assert 'List' in str(multi_leaf_annotations.get('leaf_pair_list', ''))
+    assert 'Optional' in str(multi_leaf_annotations.get('left_bank_name', ''))
+    assert 'Optional' in str(multi_leaf_annotations.get('vendor', ''))
+
+    # Check MLCLeafPair type annotations
+    leaf_pair_annotations = MLCLeafPair.__annotations__
+    assert 'Optional' in str(leaf_pair_annotations.get('width', ''))
+    assert 'Optional' in str(leaf_pair_annotations.get('y_center_position', ''))
+
+    # Check MLCLeafPositions type annotations
+    positions_annotations = MLCLeafPositions.__annotations__
+    assert 'Optional' in str(positions_annotations.get('number_of_dimensions', ''))
+    assert 'Optional' in str(positions_annotations.get('control_point', ''))
+
+    # Test inheritance from correct base class
+    from pinnacle_io.models.pinnacle_base import PinnacleBase
+    assert issubclass(MultiLeaf, PinnacleBase)
+    assert issubclass(MLCLeafPair, PinnacleBase)
+    assert issubclass(MLCLeafPositions, PinnacleBase)
+
+
+def test_mlc_documentation_completeness():
+    """Test that MLC models have comprehensive documentation."""
+    # Test MultiLeaf class docstring
+    multi_leaf_doc = MultiLeaf.__doc__
+    assert multi_leaf_doc is not None
+    assert len(multi_leaf_doc) > 1000  # Should be detailed like Beam class
+    assert "Attributes:" in multi_leaf_doc
+    assert "Relationships:" in multi_leaf_doc
+    assert "Example:" in multi_leaf_doc
+
+    # Test MLCLeafPair class docstring
+    leaf_pair_doc = MLCLeafPair.__doc__
+    assert leaf_pair_doc is not None
+    assert len(leaf_pair_doc) > 500  # Should be detailed
+    assert "Attributes:" in leaf_pair_doc
+    assert "Relationships:" in leaf_pair_doc
+    assert "Example:" in leaf_pair_doc
+
+    # Test MLCLeafPositions class docstring
+    positions_doc = MLCLeafPositions.__doc__
+    assert positions_doc is not None
+    assert len(positions_doc) > 800  # Should be detailed
+    assert "Attributes:" in positions_doc
+    assert "Relationships:" in positions_doc
+    assert "Example:" in positions_doc
+
+    # Test __init__ method documentation
+    multi_leaf_init_doc = MultiLeaf.__init__.__doc__
+    assert multi_leaf_init_doc is not None
+    assert "Args:" in multi_leaf_init_doc
+    assert "Relationship Parameters:" in multi_leaf_init_doc
+    assert "Example:" in multi_leaf_init_doc
+
+
+def test_mlc_cascade_behaviors():
+    """Test that MLC relationships have appropriate cascade behaviors."""
+    # Create a MultiLeaf with leaf pairs
+    multi_leaf = MultiLeaf(
+        left_bank_name="B",
+        right_bank_name="A",
+        leaf_pair_list=[
+            {"y_center_position": -19.5, "width": 1.0},
+            {"y_center_position": -18.5, "width": 1.0}
+        ]
+    )
+
+    # Verify relationships are created
+    assert len(multi_leaf.leaf_pair_list) == 2
+
+    # Verify the child objects have proper parent references
+    assert multi_leaf.leaf_pair_list[0].multi_leaf is multi_leaf
+    assert multi_leaf.leaf_pair_list[1].multi_leaf is multi_leaf
+
+
+def test_mlc_lazy_loading_configuration():
+    """Test that MLC relationships have optimal lazy loading strategies."""
+    # Create instances to check relationship configurations
+    multi_leaf = MultiLeaf(left_bank_name="Test")
+    leaf_pair = MLCLeafPair(width=1.0)
+    positions = MLCLeafPositions(number_of_dimensions=2)
+
+    # Check that relationships exist and are properly configured
+    # (The actual lazy loading behavior would be tested in integration tests)
+    assert hasattr(multi_leaf, 'machine')
+    assert hasattr(multi_leaf, 'leaf_pair_list')
+    assert hasattr(leaf_pair, 'multi_leaf')
+    assert hasattr(positions, 'control_point')

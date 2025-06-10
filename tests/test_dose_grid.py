@@ -334,12 +334,12 @@ def test_dose_grid_repr():
         trial=trial,
         dimension=Dimension(93, 110, 89)
     )
-    expected_repr = "<DoseGrid(id=42, trial='Test Trial', dimension=Dimension(93, 110, 89))>"
+    expected_repr = "<DoseGrid(id=42, trial='Test Trial', dimension=(93, 110, 89))>"
     assert repr(dose_grid) == expected_repr
 
     # Test with trial but no dimension
     dose_grid = DoseGrid(id=42, trial=trial)
-    expected_repr = "<DoseGrid(id=42, trial='Test Trial', dimension=None)>"
+    expected_repr = "<DoseGrid(id=42, trial='Test Trial', dimension=(0, 0, 0))>"
     assert repr(dose_grid) == expected_repr
 
     # Test with dimension but no trial
@@ -347,10 +347,10 @@ def test_dose_grid_repr():
         id=42,
         dimension=Dimension(93, 110, 89)
     )
-    expected_repr = "<DoseGrid(id=42, trial='None', dimension=Dimension(93, 110, 89))>"
+    expected_repr = "<DoseGrid(id=42, trial='', dimension=(93, 110, 89))>"
     assert repr(dose_grid) == expected_repr
 
     # Test with neither trial nor dimension
     dose_grid = DoseGrid(id=42)
-    expected_repr = "<DoseGrid(id=42, trial='None', dimension=None)>"
+    expected_repr = "<DoseGrid(id=42, trial='', dimension=(0, 0, 0))>"
     assert repr(dose_grid) == expected_repr

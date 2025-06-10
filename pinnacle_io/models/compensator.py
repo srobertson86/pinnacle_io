@@ -17,10 +17,24 @@ if TYPE_CHECKING:
 
 class Compensator(PinnacleBase):
     """
-    Model representing a beam compensator.
+    Model representing a beam compensator in Pinnacle.
 
-    This class stores all compensator-specific information needed for DICOM conversion,
-    including export settings, dimensions, and materials.
+    This class stores all compensator-specific information needed for beam modification,
+    including physical dimensions, material properties, and dose compensation settings.
+    It serves as the model for compensator data in the Pinnacle I/O system.
+
+    Attributes:
+        id (int): Primary key
+        name (str): Name of the compensator
+        export_name (str): Name used when exporting the compensator
+        tray_number (str): Tray number for the compensator
+        width (float): Width of the compensator in mm
+        height (float): Height of the compensator in mm
+        density (float): Material density in g/cm³
+        thickness (bytes): Binary data representing the thickness map
+        
+    Relationships:
+        beam (Beam): Parent beam that this compensator belongs to
     """
 
     __tablename__ = "Compensator"
@@ -120,7 +134,9 @@ class Compensator(PinnacleBase):
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
-        """
-        Return a string representation of this compensator.
+        """Return string representation of the compensator.
+        
+        Returns:
+            str: A string containing the compensator's ID and name.
         """
         return f"<Compensator(id={self.id}, name='{self.name}')>"

@@ -64,10 +64,10 @@ def test_photon_energy_repr():
     energy = PhotonEnergy(
         id=42,
         name="6X",
-        value=6.0,
+        value=6,
     )
 
-    expected_repr = "<PhotonEnergy(id=42, name='6X', value=6.0)>"
+    expected_repr = "<PhotonEnergy(id=42, name='6X', value=6, units='MV')>"
     assert repr(energy) == expected_repr
 
 
@@ -76,10 +76,10 @@ def test_electron_energy_repr():
     energy = ElectronEnergy(
         id=42,
         name="6E",
-        value=6.0,
+        value=6,
     )
 
-    expected_repr = "<ElectronEnergy(id=42, name='6E', value=6.0)>"
+    expected_repr = "<ElectronEnergy(id=42, name='6E', value=6, units='MeV')>"
     assert repr(energy) == expected_repr
 
 

@@ -23,7 +23,7 @@ Usage:
     machine.collimator_angle # Returns CollimatorAngle instance
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 from sqlalchemy import Column, String, Integer, Float, ForeignKey
 from sqlalchemy.orm import Mapped, relationship
 
@@ -148,15 +148,28 @@ class CouchAngle(AngleBase):
         primaryjoin="Machine.id == CouchAngle.machine_id",
     )
 
-    def __init__(self, **kwargs):
-        """
-        Initialize a CouchAngle instance.
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a CouchAngle instance.
 
         Args:
-            **kwargs: Keyword arguments used to initialize CouchAngle attributes.
+            **kwargs: Keyword arguments to initialize CouchAngle attributes.
+                Common attributes include:
+                - name (str): Display name for the couch angle
+                - twelve_o_clock_angle (float): Reference angle for 12 o'clock position
+                - minimum_angle (float): Minimum allowed angle
+                - maximum_angle (float): Maximum allowed angle
+                - machine_id (int): ID of the parent Machine
 
         Relationships:
-            machine (Machine): The parent Machine to which this CouchAngle belongs (many-to-one).
+            machine (Machine): The parent Machine to which this CouchAngle belongs (one-to-one).
+
+        Example:
+            >>> couch = CouchAngle(
+            ...     name="Treatment Couch",
+            ...     minimum_angle=-90.0,
+            ...     maximum_angle=90.0,
+            ...     machine_id=1
+            ... )
         """
         super().__init__(**kwargs)
 
@@ -175,15 +188,30 @@ class GantryAngle(AngleBase):
         primaryjoin="Machine.id == GantryAngle.machine_id",
     )
 
-    def __init__(self, **kwargs):
-        """
-        Initialize a GantryAngle instance.
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a GantryAngle instance.
 
         Args:
-            **kwargs: Keyword arguments used to initialize GantryAngle attributes.
+            **kwargs: Keyword arguments to initialize GantryAngle attributes.
+                Common attributes include:
+                - name (str): Display name for the gantry angle
+                - twelve_o_clock_angle (float): Reference angle for 12 o'clock position
+                - minimum_angle (float): Minimum allowed angle (typically 0)
+                - maximum_angle (float): Maximum allowed angle (typically 360)
+                - max_gantry_rotation_speed (float): Maximum rotation speed in degrees/second
+                - machine_id (int): ID of the parent Machine
 
         Relationships:
-            machine (Machine): The parent Machine to which this GantryAngle belongs (many-to-one).
+            machine (Machine): The parent Machine to which this GantryAngle belongs (one-to-one).
+
+        Example:
+            >>> gantry = GantryAngle(
+            ...     name="Treatment Gantry",
+            ...     minimum_angle=0.0,
+            ...     maximum_angle=360.0,
+            ...     max_gantry_rotation_speed=6.0,
+            ...     machine_id=1
+            ... )
         """
         super().__init__(**kwargs)
 
@@ -202,14 +230,29 @@ class CollimatorAngle(AngleBase):
         primaryjoin="Machine.id == CollimatorAngle.machine_id",
     )
 
-    def __init__(self, **kwargs):
-        """
-        Initialize a CollimatorAngle instance.
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a CollimatorAngle instance.
 
         Args:
-            **kwargs: Keyword arguments used to initialize CollimatorAngle attributes.
+            **kwargs: Keyword arguments to initialize CollimatorAngle attributes.
+                Common attributes include:
+                - name (str): Display name for the collimator angle
+                - twelve_o_clock_angle (float): Reference angle for 12 o'clock position
+                - minimum_angle (float): Minimum allowed angle
+                - maximum_angle (float): Maximum allowed angle
+                - decimal_places (int): Number of decimal places for angle display
+                - machine_id (int): ID of the parent Machine
 
         Relationships:
-            machine (Machine): The parent Machine to which this CollimatorAngle belongs (many-to-one).
+            machine (Machine): The parent Machine to which this CollimatorAngle belongs (one-to-one).
+
+        Example:
+            >>> collimator = CollimatorAngle(
+            ...     name="Collimator",
+            ...     minimum_angle=-180.0,
+            ...     maximum_angle=180.0,
+            ...     decimal_places=1,
+            ...     machine_id=1
+            ... )
         """
         super().__init__(**kwargs)

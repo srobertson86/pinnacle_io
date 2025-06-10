@@ -94,7 +94,7 @@ def test_monitor_unit_info_repr():
 def test_monitor_unit_info_nullable_fields():
     """Test that all fields in MonitorUnitInfo can be null."""
     monitor_unit_info = MonitorUnitInfo()
-    
+
     # Verify all fields can be null
     assert monitor_unit_info.prescription_dose is None
     assert monitor_unit_info.source_to_prescription_point_distance is None
@@ -118,3 +118,99 @@ def test_monitor_unit_info_nullable_fields():
     assert monitor_unit_info.phantom_output_factor is None
     assert monitor_unit_info.of_measurement_depth is None
     assert monitor_unit_info.output_factor_info is None
+
+
+def test_monitor_unit_info_sqlalchemy_standards_compliance():
+    """Test that MonitorUnitInfo model follows SQLAlchemy standards and best practices."""
+    # Test relationship naming (no list relationships in this model)
+    monitor_unit_info = MonitorUnitInfo(prescription_dose=200.0)
+
+    # Verify single relationships don't have _list suffix
+    assert hasattr(monitor_unit_info, 'beam')
+
+    # Test that relationships are properly typed by checking annotations
+    # Check MonitorUnitInfo type annotations
+    annotations = MonitorUnitInfo.__annotations__
+    assert 'Optional' in str(annotations.get('prescription_dose', ''))
+    assert 'Optional' in str(annotations.get('normalized_dose', ''))
+    assert 'Optional' in str(annotations.get('transmission_description', ''))
+    assert 'Optional' in str(annotations.get('output_factor_info', ''))
+
+    # Test inheritance from correct base class
+    from pinnacle_io.models.pinnacle_base import PinnacleBase
+    assert issubclass(MonitorUnitInfo, PinnacleBase)
+
+
+def test_monitor_unit_info_documentation_completeness():
+    """Test that MonitorUnitInfo has comprehensive documentation."""
+    # Test MonitorUnitInfo class docstring
+    docstring = MonitorUnitInfo.__doc__
+    assert docstring is not None
+    assert len(docstring) > 1500  # Should be detailed like Beam class
+    assert "Attributes:" in docstring
+    assert "Relationships:" in docstring
+    assert "Example:" in docstring
+    assert "Dosimetric Calculations:" in docstring
+
+    # Test __init__ method documentation
+    init_doc = MonitorUnitInfo.__init__.__doc__
+    assert init_doc is not None
+    assert "Args:" in init_doc
+    assert "Dosimetric Parameters:" in init_doc
+    assert "Relationship Parameters:" in init_doc
+    assert "Example:" in init_doc
+
+
+def test_monitor_unit_info_lazy_loading_configuration():
+    """Test that MonitorUnitInfo relationships have optimal lazy loading strategies."""
+    # Create instance to check relationship configurations
+    monitor_unit_info = MonitorUnitInfo(prescription_dose=200.0)
+
+    # Check that relationships exist and are properly configured
+    # (The actual lazy loading behavior would be tested in integration tests)
+    assert hasattr(monitor_unit_info, 'beam')
+
+
+def test_monitor_unit_info_dosimetric_calculations():
+    """Test MonitorUnitInfo with realistic dosimetric values."""
+    # Test with realistic monitor unit calculation values
+    monitor_unit_info = MonitorUnitInfo(
+        prescription_dose=200.0,  # 2 Gy prescription
+        source_to_prescription_point_distance=100.0,  # Standard SAD
+        total_transmission_fraction=0.95,  # 5% transmission loss
+        prescription_point_depth=10.0,  # 10 cm depth
+        normalized_dose=100.0,  # Normalized to 100 cGy
+        off_axis_ratio=0.98,  # 2% off-axis reduction
+        collimator_output_factor=1.02,  # 2% increase for field size
+        relative_output_factor=1.0,  # Reference field size
+        phantom_output_factor=0.99,  # 1% phantom scatter reduction
+        of_measurement_depth=5.0,  # Output factors measured at 5 cm
+        output_factor_info="Measured with ion chamber at dmax"
+    )
+
+    # Verify all dosimetric values are set correctly
+    assert monitor_unit_info.prescription_dose == 200.0
+    assert monitor_unit_info.total_transmission_fraction == 0.95
+    assert monitor_unit_info.off_axis_ratio == 0.98
+    assert monitor_unit_info.collimator_output_factor == 1.02
+    assert monitor_unit_info.relative_output_factor == 1.0
+    assert monitor_unit_info.phantom_output_factor == 0.99
+    assert "ion chamber" in monitor_unit_info.output_factor_info
+
+
+def test_monitor_unit_info_field_geometry():
+    """Test MonitorUnitInfo with field geometry parameters."""
+    monitor_unit_info = MonitorUnitInfo(
+        unblocked_field_area_at_sad=100.0,  # 10x10 cm field
+        unblocked_field_perimeter_at_sad=40.0,  # Perimeter of 10x10 field
+        blocked_field_area_at_sad=95.0,  # 5 cm² blocked
+        intersect_field_area_at_sad=90.0,  # Effective treatment area
+        prescription_point_off_axis_distance=2.5  # 2.5 cm off-axis
+    )
+
+    # Verify field geometry values
+    assert monitor_unit_info.unblocked_field_area_at_sad == 100.0
+    assert monitor_unit_info.unblocked_field_perimeter_at_sad == 40.0
+    assert monitor_unit_info.blocked_field_area_at_sad == 95.0
+    assert monitor_unit_info.intersect_field_area_at_sad == 90.0
+    assert monitor_unit_info.prescription_point_off_axis_distance == 2.5

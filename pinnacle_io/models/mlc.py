@@ -1,7 +1,10 @@
 """
-MLCLeafPositions model for Pinnacle IO.
+SQLAlchemy models for Multi-Leaf Collimator (MLC) data in Pinnacle.
 
-This module provides the MLCLeafPositions data models for representing beam configuration.
+This module provides comprehensive models for representing MLC configurations,
+leaf positions, and leaf pair data in the Pinnacle treatment planning system.
+The models handle both static MLC configurations and dynamic leaf position data
+for treatment delivery.
 """
 
 from typing import Optional, ClassVar, List, TYPE_CHECKING
@@ -15,17 +18,56 @@ from pinnacle_io.models.pinnacle_base import PinnacleBase
 
 if TYPE_CHECKING:
     from pinnacle_io.models.machine import Machine
+    from pinnacle_io.models.control_point import ControlPoint
 
 
 class MLCLeafPositions(PinnacleBase):
     """
-    Model representing the MLC leaf positions for control points
+    Model representing Multi-Leaf Collimator (MLC) leaf positions for control points.
+
+    This class stores the precise positions of MLC leaves at specific control points
+    during treatment delivery. It handles the serialization and deserialization of
+    leaf position data, converting between the database storage format (int16 millimeters)
+    and the application format (float32 centimeters) for optimal storage efficiency
+    and computational precision.
+
+    The MLC leaf positions are critical for intensity-modulated radiation therapy (IMRT)
+    and volumetric modulated arc therapy (VMAT) treatments, where the leaf positions
+    change dynamically during beam delivery to create complex dose distributions.
+
+    Attributes:
+        id (int): Primary key inherited from PinnacleBase
+        number_of_dimensions (int): Number of spatial dimensions (typically 2 for X,Y)
+        number_of_points (int): Number of leaf pairs (typically 60 for modern MLCs)
+        control_point_id (int): Foreign key to the parent ControlPoint
+
+    Properties:
+        points (np.ndarray): Leaf positions in centimeters as a float32 array
+                           Shape: (number_of_points, number_of_dimensions)
+
+    Relationships:
+        control_point (ControlPoint): The parent control point that owns these positions (many-to-one)
+
+    Storage Details:
+        The leaf positions are stored in the database as binary data (_points_data) using
+        int16 values representing millimeters. This provides sufficient precision (0.1mm)
+        while minimizing storage space. The positions are automatically converted to/from
+        centimeters when accessed through the points property.
+
+    Example:
+        >>> positions = MLCLeafPositions(
+        ...     number_of_dimensions=2,
+        ...     number_of_points=60,
+        ...     points=np.zeros((60, 2), dtype=np.float32)
+        ... )
+        >>> positions.points[0, 0] = -5.0  # Left leaf at -5.0 cm
+        >>> positions.points[0, 1] = 5.0   # Right leaf at 5.0 cm
     """
 
     __tablename__ = "MLCLeafPositions"
 
-    number_of_dimensions: Mapped[int] = Column("NumberOfDimensions", Integer, nullable=True)
-    number_of_points: Mapped[int] = Column("NumberOfPoints", Integer, nullable=True)
+    number_of_dimensions: Mapped[Optional[int]] = Column("NumberOfDimensions", Integer, nullable=True)
+    number_of_points: Mapped[Optional[int]] = Column("NumberOfPoints", Integer, nullable=True)
 
     # For storing serialized points data as int16 values (millimeters)
     _points_data: Mapped[Optional[bytes]] = Column(
@@ -36,7 +78,11 @@ class MLCLeafPositions(PinnacleBase):
     control_point_id: Mapped[Optional[int]] = Column(
         "ControlPointID", Integer, ForeignKey("ControlPoint.ID"), nullable=True
     )
-    control_point = relationship("ControlPoint", back_populates="_mlc_leaf_positions")
+    control_point: Mapped[Optional["ControlPoint"]] = relationship(
+        "ControlPoint",
+        back_populates="_mlc_leaf_positions",
+        lazy="selectin"  # Use selectin loading for better performance
+    )
 
     # Transient attributes (not stored in database)
     _points: ClassVar[Optional[np.ndarray]] = None
@@ -60,6 +106,9 @@ class MLCLeafPositions(PinnacleBase):
             self.points = points
 
     def __repr__(self) -> str:
+        """
+        Return a string representation of this MLC leaf positions.
+        """
         return f"<MLCLeafPositions(id={self.id}, points={self.number_of_points})>"
 
     @property
@@ -146,26 +195,71 @@ class MLCLeafPositions(PinnacleBase):
 
 class MLCLeafPair(PinnacleBase):
     """
-    Represents a leaf pair for a Pinnacle treatment machine.
+    Represents a single leaf pair in a Multi-Leaf Collimator (MLC) system.
+
+    Each leaf pair consists of two opposing leaves that can move independently
+    to create complex aperture shapes for radiation therapy. This class stores
+    the physical and geometric properties of a leaf pair, including its position,
+    dimensions, travel limits, and leakage characteristics.
+
+    The leaf pair configuration is essential for accurate dose calculation and
+    treatment delivery verification, as it defines the mechanical constraints
+    and physical properties that affect radiation transmission and leakage.
+
+    Attributes:
+        id (int): Primary key inherited from PinnacleBase
+        y_center_position (float): Y-coordinate of the leaf pair center in cm
+        negate_leaf_coordinate (int): Flag to negate leaf coordinates (1=yes, 0=no)
+        width (float): Width of the leaf pair in cm (leaf thickness)
+        min_tip_position (float): Minimum leaf tip position in cm
+        max_tip_position (float): Maximum leaf tip position in cm
+        side_leakage_width (float): Width of side leakage region in cm
+        tip_leakage_width (float): Width of tip leakage region in cm
+        multi_leaf_id (int): Foreign key to the parent MultiLeaf configuration
+
+    Relationships:
+        multi_leaf (MultiLeaf): The parent MLC configuration that owns this leaf pair (many-to-one)
+
+    Physical Properties:
+        The leaf pair defines the mechanical and dosimetric properties of MLC leaves:
+        - Position constraints (min/max tip positions)
+        - Geometric dimensions (width, center position)
+        - Leakage characteristics (side and tip leakage)
+        - Coordinate system orientation (negate flag)
+
+    Example:
+        >>> leaf_pair = MLCLeafPair(
+        ...     y_center_position=-19.5,
+        ...     width=1.0,
+        ...     min_tip_position=-20.0,
+        ...     max_tip_position=20.0,
+        ...     side_leakage_width=0.1,
+        ...     tip_leakage_width=0.1
+        ... )
     """
 
     __tablename__ = "MLCLeafPair"
 
-    y_center_position: Mapped[float] = Column("YCenterPosition", Float, nullable=True)
-    negate_leaf_coordinate: Mapped[int] = Column("NegateLeafCoordinate", Integer, nullable=True)
-    width: Mapped[float] = Column("Width", Float, nullable=True)
-    min_tip_position: Mapped[float] = Column("MinTipPosition", Float, nullable=True)
-    max_tip_position: Mapped[float] = Column("MaxTipPosition", Float, nullable=True)
-    side_leakage_width: Mapped[float] = Column("SideLeakageWidth", Float, nullable=True)
-    tip_leakage_width: Mapped[float] = Column("TipLeakageWidth", Float, nullable=True)
+    y_center_position: Mapped[Optional[float]] = Column("YCenterPosition", Float, nullable=True)
+    negate_leaf_coordinate: Mapped[Optional[int]] = Column("NegateLeafCoordinate", Integer, nullable=True)
+    width: Mapped[Optional[float]] = Column("Width", Float, nullable=True)
+    min_tip_position: Mapped[Optional[float]] = Column("MinTipPosition", Float, nullable=True)
+    max_tip_position: Mapped[Optional[float]] = Column("MaxTipPosition", Float, nullable=True)
+    side_leakage_width: Mapped[Optional[float]] = Column("SideLeakageWidth", Float, nullable=True)
+    tip_leakage_width: Mapped[Optional[float]] = Column("TipLeakageWidth", Float, nullable=True)
 
     # Foreign key relationship to MultiLeaf
     multi_leaf_id: Mapped[int] = Column(Integer, ForeignKey("MultiLeaf.ID"))
     multi_leaf: Mapped["MultiLeaf"] = relationship(
-        "MultiLeaf", back_populates="leaf_pair_list"
+        "MultiLeaf",
+        back_populates="leaf_pair_list",
+        lazy="selectin"  # Use selectin loading for better performance
     )
 
     def __repr__(self) -> str:
+        """
+        Return a string representation of this MLC leaf pair.
+        """
         return f"<MLCLeafPair(id={self.id}, width={self.width}, y_center_position={self.y_center_position})>"
 
     def __init__(self, **kwargs):
@@ -183,75 +277,158 @@ class MLCLeafPair(PinnacleBase):
 
 class MultiLeaf(PinnacleBase):
     """
-    Represents the multi-leaf collimator (MLC) configuration for a Pinnacle
-    treatment machine.
+    Model representing the Multi-Leaf Collimator (MLC) configuration for a treatment machine.
+
+    This class stores the comprehensive configuration of an MLC system, including
+    physical properties, mechanical constraints, and operational parameters. The MLC
+    is a critical component of modern linear accelerators that enables precise beam
+    shaping for intensity-modulated radiation therapy (IMRT) and volumetric modulated
+    arc therapy (VMAT) treatments.
+
+    The MultiLeaf model serves as the central configuration hub for all MLC-related
+    parameters, defining how the leaf system behaves during treatment planning and
+    delivery. It manages the relationship between the machine and individual leaf
+    pairs, ensuring consistent and accurate beam modulation.
+
+    Attributes:
+        id (int): Primary key inherited from PinnacleBase
+        left_bank_name (str): Name identifier for the left leaf bank (e.g., "B", "Left")
+        right_bank_name (str): Name identifier for the right leaf bank (e.g., "A", "Right")
+        leaf_x_base_position (float): Base X position for leaf coordinate system in cm
+        max_overall_leaf_difference (float): Maximum allowed difference between opposing leaves in cm
+        min_static_leaf_gap (float): Minimum gap between opposing leaves for static fields in cm
+        min_dynamic_leaf_gap (float): Minimum gap between opposing leaves for dynamic fields in cm
+        opposing_adjacent_leaves_can_overlap (int): Flag allowing adjacent leaf overlap (1=yes, 0=no)
+        tongue_and_groove_leakage_width (float): Width of tongue-and-groove leakage region in cm
+        tip_leakage_radius (float): Radius of leaf tip leakage region in cm
+        rounded_leaf_mlc (int): Flag indicating rounded leaf tips (1=yes, 0=no)
+        inter_leaf_leakage_trans (float): Inter-leaf transmission leakage factor
+        replaces_jaw (int): Flag indicating if MLC replaces jaw collimation (1=yes, 0=no)
+        negate_leaf_coordinates (int): Flag to negate leaf coordinate system (1=yes, 0=no)
+        aligned_with_left_right_jaw (int): Flag for jaw alignment (1=yes, 0=no)
+        mlc_tracks_jaw_for_open_fields (str): MLC jaw tracking behavior for open fields
+        source_to_mlc_distance (float): Distance from radiation source to MLC in cm
+        thickness (float): Physical thickness of MLC leaves in cm
+        decimal_places (int): Number of decimal places for leaf position precision
+        vendor (str): MLC manufacturer/vendor name
+        has_carriage (int): Flag indicating carriage-based MLC system (1=yes, 0=no)
+        max_tip_position_from_jaw (float): Maximum leaf tip position relative to jaw in cm
+        default_max_leaf_speed (float): Default maximum leaf speed in cm/s
+        default_max_leaf_speed_mu (float): Default maximum leaf speed per MU in cm/MU
+        open_extra_leaf_pairs (int): Number of extra leaf pairs to open for field margins
+        default_leaf_position_tolerance (float): Default tolerance for leaf positioning in cm
+        jaws_conformance (str): Jaw conformance behavior setting
+        min_leaf_jaw_overlap (float): Minimum required overlap between leaves and jaws in cm
+        max_leaf_jaw_overlap (float): Maximum allowed overlap between leaves and jaws in cm
+        machine_id (int): Foreign key to the parent Machine
+
+    Relationships:
+        machine (Machine): The parent treatment machine that owns this MLC (one-to-one)
+        leaf_pair_list (List[MLCLeafPair]): List of individual leaf pair configurations (one-to-many)
+
+    Example:
+        >>> mlc = MultiLeaf(
+        ...     left_bank_name="B",
+        ...     right_bank_name="A",
+        ...     leaf_x_base_position=60.0,
+        ...     min_static_leaf_gap=0.5,
+        ...     source_to_mlc_distance=50.0,
+        ...     vendor="Varian"
+        ... )
     """
 
     __tablename__ = "MultiLeaf"
 
     # Primary key is inherited from PinnacleBase
-    left_bank_name: Mapped[str] = Column("LeftBankName", String, nullable=True)
-    right_bank_name: Mapped[str] = Column("RightBankName", String, nullable=True)
-    leaf_x_base_position: Mapped[float] = Column("LeafXBasePosition", Float, nullable=True)
-    max_overall_leaf_difference: Mapped[float] = Column(
+    left_bank_name: Mapped[Optional[str]] = Column("LeftBankName", String, nullable=True)
+    right_bank_name: Mapped[Optional[str]] = Column("RightBankName", String, nullable=True)
+    leaf_x_base_position: Mapped[Optional[float]] = Column("LeafXBasePosition", Float, nullable=True)
+    max_overall_leaf_difference: Mapped[Optional[float]] = Column(
         "MaxOverallLeafDifference", Float, nullable=True
     )
-    min_static_leaf_gap: Mapped[float] = Column("MinStaticLeafGap", Float, nullable=True)
-    min_dynamic_leaf_gap: Mapped[float] = Column("MinDynamicLeafGap", Float, nullable=True)
-    opposing_adjacent_leaves_can_overlap: Mapped[int] = Column(
+    min_static_leaf_gap: Mapped[Optional[float]] = Column("MinStaticLeafGap", Float, nullable=True)
+    min_dynamic_leaf_gap: Mapped[Optional[float]] = Column("MinDynamicLeafGap", Float, nullable=True)
+    opposing_adjacent_leaves_can_overlap: Mapped[Optional[int]] = Column(
         "OpposingAdjacentLeavesCanOverlap", Integer, nullable=True
     )
-    tongue_and_groove_leakage_width: Mapped[float] = Column(
+    tongue_and_groove_leakage_width: Mapped[Optional[float]] = Column(
         "TongueAndGrooveLeakageWidth", Float, nullable=True
     )
-    tip_leakage_radius: Mapped[float] = Column("TipLeakageRadius", Float, nullable=True)
-    rounded_leaf_mlc: Mapped[int] = Column("RoundedLeafMLC", Integer, nullable=True)
-    inter_leaf_leakage_trans: Mapped[float] = Column("InterLeafLeakageTrans", Float, nullable=True)
-    replaces_jaw: Mapped[int] = Column("ReplacesJaw", Integer, nullable=True)
-    negate_leaf_coordinates: Mapped[int] = Column("NegateLeafCoordinates", Integer, nullable=True)
-    aligned_with_left_right_jaw: Mapped[int] = Column(
+    tip_leakage_radius: Mapped[Optional[float]] = Column("TipLeakageRadius", Float, nullable=True)
+    rounded_leaf_mlc: Mapped[Optional[int]] = Column("RoundedLeafMLC", Integer, nullable=True)
+    inter_leaf_leakage_trans: Mapped[Optional[float]] = Column("InterLeafLeakageTrans", Float, nullable=True)
+    replaces_jaw: Mapped[Optional[int]] = Column("ReplacesJaw", Integer, nullable=True)
+    negate_leaf_coordinates: Mapped[Optional[int]] = Column("NegateLeafCoordinates", Integer, nullable=True)
+    aligned_with_left_right_jaw: Mapped[Optional[int]] = Column(
         "AlignedWithLeftRightJaw", Integer, nullable=True
     )
-    mlc_tracks_jaw_for_open_fields: Mapped[str] = Column(
+    mlc_tracks_jaw_for_open_fields: Mapped[Optional[str]] = Column(
         "MLCTracksJawForOpenFields", String, nullable=True
     )
-    source_to_mlc_distance: Mapped[float] = Column("SourceToMLCDistance", Float, nullable=True)
-    thickness: Mapped[float] = Column("Thickness", Float, nullable=True)
-    decimal_places: Mapped[int] = Column("DecimalPlaces", Integer, nullable=True)
-    vendor: Mapped[str] = Column("Vendor", String, nullable=True)
-    has_carriage: Mapped[int] = Column("HasCarriage", Integer, nullable=True)
-    max_tip_position_from_jaw: Mapped[float] = Column("MaxTipPositionFromJaw", Float, nullable=True)
-    default_max_leaf_speed: Mapped[float] = Column("DefaultMaxLeafSpeed", Float, nullable=True)
-    default_max_leaf_speed_mu: Mapped[float] = Column("DefaultMaxLeafSpeedMU", Float, nullable=True)
-    open_extra_leaf_pairs: Mapped[int] = Column("OpenExtraLeafPairs", Integer, nullable=True)
-    default_leaf_position_tolerance: Mapped[float] = Column(
+    source_to_mlc_distance: Mapped[Optional[float]] = Column("SourceToMLCDistance", Float, nullable=True)
+    thickness: Mapped[Optional[float]] = Column("Thickness", Float, nullable=True)
+    decimal_places: Mapped[Optional[int]] = Column("DecimalPlaces", Integer, nullable=True)
+    vendor: Mapped[Optional[str]] = Column("Vendor", String, nullable=True)
+    has_carriage: Mapped[Optional[int]] = Column("HasCarriage", Integer, nullable=True)
+    max_tip_position_from_jaw: Mapped[Optional[float]] = Column("MaxTipPositionFromJaw", Float, nullable=True)
+    default_max_leaf_speed: Mapped[Optional[float]] = Column("DefaultMaxLeafSpeed", Float, nullable=True)
+    default_max_leaf_speed_mu: Mapped[Optional[float]] = Column("DefaultMaxLeafSpeedMU", Float, nullable=True)
+    open_extra_leaf_pairs: Mapped[Optional[int]] = Column("OpenExtraLeafPairs", Integer, nullable=True)
+    default_leaf_position_tolerance: Mapped[Optional[float]] = Column(
         "DefaultLeafPositionTolerance", Float, nullable=True
     )
-    jaws_conformance: Mapped[str] = Column("JawsConformance", String, nullable=True)
-    min_leaf_jaw_overlap: Mapped[float] = Column("MinLeafJawOverlap", Float, nullable=True)
-    max_leaf_jaw_overlap: Mapped[float] = Column("MaxLeafJawOverlap", Float, nullable=True)
+    jaws_conformance: Mapped[Optional[str]] = Column("JawsConformance", String, nullable=True)
+    min_leaf_jaw_overlap: Mapped[Optional[float]] = Column("MinLeafJawOverlap", Float, nullable=True)
+    max_leaf_jaw_overlap: Mapped[Optional[float]] = Column("MaxLeafJawOverlap", Float, nullable=True)
 
     # One-to-one relationship with Machine
     machine_id: Mapped[int] = Column(Integer, ForeignKey("Machine.ID"))
-    machine: Mapped["Machine"] = relationship("Machine", back_populates="multi_leaf")
+    machine: Mapped["Machine"] = relationship(
+        "Machine",
+        back_populates="multi_leaf",
+        lazy="selectin"  # Use selectin loading for better performance
+    )
 
-    # One-to-one relationship with LeafPairList
+    # One-to-many relationship with LeafPairList
     leaf_pair_list: Mapped[List["MLCLeafPair"]] = relationship(
-        "MLCLeafPair", back_populates="multi_leaf", cascade="all, delete-orphan"
+        "MLCLeafPair",
+        back_populates="multi_leaf",
+        cascade="all, delete-orphan",
+        lazy="selectin"  # Use selectin loading for better performance
     )
 
     def __init__(self, **kwargs):
         """
         Initialize a MultiLeaf instance.
 
+        This constructor handles initialization of all MLC configuration attributes
+        and relationships. It supports both direct attribute assignment and nested
+        relationship creation through dictionaries for leaf pair configurations.
+
         Args:
             **kwargs: Keyword arguments used to initialize MultiLeaf attributes.
+                Can include any of the MLC configuration attributes as well as
+                relationship data for child objects.
 
-        Relationships:
-            machine (Machine): The parent Machine to which this MultiLeaf belongs (one-to-one).
-            leaf_pair_list (List[MLCLeafPair]): List of MLCLeafPair objects associated with this MultiLeaf (one-to-many).
+        Relationship Parameters:
+            machine (dict or Machine): Parent machine configuration data
+            leaf_pair_list (list): List of leaf pair data (dicts or MLCLeafPair objects)
+
+        Example:
+            >>> mlc = MultiLeaf(
+            ...     left_bank_name="B",
+            ...     right_bank_name="A",
+            ...     source_to_mlc_distance=50.0,
+            ...     leaf_pair_list=[
+            ...         {"y_center_position": -19.5, "width": 1.0},
+            ...         {"y_center_position": -18.5, "width": 1.0}
+            ...     ]
+            ... )
         """
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
+        """
+        Return a string representation of this MLC configuration.
+        """
         return f"<MultiLeaf(id={self.id}, machine_id={self.machine_id}, machine.name={self.machine.name if self.machine else 'None'})>"

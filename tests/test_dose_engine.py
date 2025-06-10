@@ -16,7 +16,7 @@ def test_dose_engine_repr():
     )
 
     # Verify the __repr__ output matches the expected format for no beam
-    expected_repr = "<DoseEngine(id=42, beam='None', type_name='TestEngine')>"
+    expected_repr = "<DoseEngine(id=42, beam='', type_name='TestEngine')>"
     assert repr(dose_engine) == expected_repr
 
     # Test with beam

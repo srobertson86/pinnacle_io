@@ -371,10 +371,10 @@ def test_read_electron_applicator_data():
     machine_list = MachineReader.read(
         Path(__file__).parent / "test_data/01/Institution_1/Mount_0/Patient_1/Plan_0"
     )
-    
+
     machine = machine_list[0]
     assert len(machine.electron_applicator_list) > 0
-    
+
     # Get the first applicator for detailed testing
     applicator = machine.electron_applicator_list[0]
     assert isinstance(applicator, ElectronApplicator)
@@ -382,7 +382,7 @@ def test_read_electron_applicator_data():
     assert isinstance(applicator.width, (float, type(None)))
     assert isinstance(applicator.length, (float, type(None)))
     assert isinstance(applicator.manufacturer_code, (str, type(None)))
-    
+
     # Test cutout properties if they exist
     if applicator.cutout_material is not None:
         assert isinstance(applicator.cutout_material, str)
@@ -392,3 +392,92 @@ def test_read_electron_applicator_data():
         assert isinstance(applicator.cutout_is_divergent, int)
     if applicator.cutout_is_rectangular is not None:
         assert isinstance(applicator.cutout_is_rectangular, int)
+
+
+def test_machine_sqlalchemy_standards_compliance():
+    """Test that Machine model follows SQLAlchemy standards and best practices."""
+    # Test relationship naming follows _list convention
+    machine = Machine(name="Standards Test Machine")
+
+    # Verify list relationships follow _list convention
+    assert hasattr(machine, 'electron_applicator_list')
+    assert hasattr(machine, 'tolerance_table_list')
+    assert hasattr(machine, 'photon_energy_list')
+    assert hasattr(machine, 'electron_energy_list')
+
+    # Verify single relationships don't have _list suffix
+    assert hasattr(machine, 'couch_angle')
+    assert hasattr(machine, 'gantry_angle')
+    assert hasattr(machine, 'collimator_angle')
+    assert hasattr(machine, 'config_rv')
+    assert hasattr(machine, 'multi_leaf')
+
+    # Test that relationships are properly typed
+    from typing import get_type_hints
+    hints = get_type_hints(Machine)
+
+    # Check that list relationships are typed as List[...]
+    assert 'List' in str(hints.get('electron_applicator_list', ''))
+    assert 'List' in str(hints.get('tolerance_table_list', ''))
+    assert 'List' in str(hints.get('photon_energy_list', ''))
+    assert 'List' in str(hints.get('electron_energy_list', ''))
+
+    # Test that optional fields are properly typed
+    assert 'Optional' in str(hints.get('machine_type', ''))
+    assert 'Optional' in str(hints.get('version_timestamp', ''))
+
+    # Test inheritance from correct base class
+    from pinnacle_io.models.versioned_base import VersionedBase
+    assert issubclass(Machine, VersionedBase)
+
+    # Test that ElectronApplicator inherits from correct base class
+    from pinnacle_io.models.pinnacle_base import PinnacleBase
+    assert issubclass(ElectronApplicator, PinnacleBase)
+
+
+def test_machine_documentation_completeness():
+    """Test that Machine and ElectronApplicator have comprehensive documentation."""
+    # Test Machine class docstring
+    machine_doc = Machine.__doc__
+    assert machine_doc is not None
+    assert len(machine_doc) > 500  # Should be detailed like Beam class
+    assert "Attributes:" in machine_doc
+    assert "Relationships:" in machine_doc
+    assert "Example:" in machine_doc
+
+    # Test ElectronApplicator class docstring
+    applicator_doc = ElectronApplicator.__doc__
+    assert applicator_doc is not None
+    assert len(applicator_doc) > 300  # Should be detailed
+    assert "Attributes:" in applicator_doc
+    assert "Relationships:" in applicator_doc
+    assert "Example:" in applicator_doc
+
+    # Test __init__ method documentation
+    machine_init_doc = Machine.__init__.__doc__
+    assert machine_init_doc is not None
+    assert "Args:" in machine_init_doc
+    assert "Relationship Parameters:" in machine_init_doc
+    assert "Example:" in machine_init_doc
+
+
+def test_machine_cascade_behaviors():
+    """Test that Machine relationships have appropriate cascade behaviors."""
+    # Create a machine with relationships
+    machine = Machine(
+        name="Cascade Test Machine",
+        electron_applicator_list=[
+            {"name": "Test Applicator", "width": 10.0, "length": 10.0}
+        ],
+        tolerance_table_list=[
+            {"name": "Test Table", "number": 1}
+        ]
+    )
+
+    # Verify relationships are created
+    assert len(machine.electron_applicator_list) == 1
+    assert len(machine.tolerance_table_list) == 1
+
+    # Verify the child objects have proper parent references
+    assert machine.electron_applicator_list[0].machine is machine
+    assert machine.tolerance_table_list[0].machine is machine

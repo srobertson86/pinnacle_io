@@ -4,7 +4,7 @@ Dose model for Pinnacle IO.
 This module provides the Dose data model for representing dose distribution data.
 """
 
-from typing import Optional, List, Tuple, ClassVar, TYPE_CHECKING
+from typing import Any, ClassVar, List, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import Mapped, relationship
@@ -18,10 +18,28 @@ if TYPE_CHECKING:
 
 class Dose(PinnacleBase):
     """
-    Model representing a dose distribution.
+    Model representing a dose distribution in the Pinnacle treatment planning system.
 
-    This class stores all dose-specific information needed for DICOM conversion,
-    including dose grid dimensions, resolution, and pixel data.
+    This class encapsulates all dose-related information including dose grid properties,
+    dose calculation parameters, and relationships to other treatment planning entities.
+    It supports various dose types (PHYSICAL, EFFECTIVE) and units (GY, CGY).
+
+    The dose can be associated with different levels of the treatment hierarchy:
+    - Beam-specific dose (for individual beam contributions)
+    - Trial dose (for composite dose across all beams in a trial)
+    - Plan dose (for the final treatment plan dose)
+
+    Key Features:
+    - Supports both grid-based and point-based dose representation
+    - Handles dose grid transformations and coordinate systems
+    - Manages relationships with DoseGrid, Beam, and Trial entities
+    - Provides methods for dose grid manipulation and analysis
+
+    Relationships:
+        - dose_grid (DoseGrid): The parent DoseGrid containing spatial information
+        - beam (Beam): Associated Beam for beam-specific doses (optional)
+        - trial (Trial): Associated Trial for trial-level doses (optional)
+        - max_dose_point (MaxDosePoint): Point of maximum dose (one-to-one)
     """
 
     __tablename__ = "Dose"
@@ -91,8 +109,12 @@ class Dose(PinnacleBase):
     trial: Mapped[Optional["Trial"]] = relationship("Trial", back_populates="dose")
 
     # Child relationship
-    max_dose_point: Mapped["MaxDosePoint"] = relationship(
-        "MaxDosePoint", back_populates="dose", uselist=False
+    max_dose_point: Mapped[Optional["MaxDosePoint"]] = relationship(
+        "MaxDosePoint", 
+        back_populates="dose", 
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="joined"
     )
 
     # For storing serialized pixel data (optional, could use external storage)
@@ -102,18 +124,34 @@ class Dose(PinnacleBase):
     # Transient attributes (not stored in database)
     _pixel_data: ClassVar[Optional[np.ndarray]] = None
 
-    def __init__(self, **kwargs):
-        """
-        Initialize a Dose instance.
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a Dose instance with optional attributes and relationships.
 
         Args:
-            **kwargs: Keyword arguments used to initialize Dose attributes.
+            **kwargs: Keyword arguments to initialize Dose attributes.
+                Common attributes include:
+                - dose_id (str): Unique identifier for the dose
+                - dose_type (str): Type of dose (e.g., 'PHYSICAL', 'EFFECTIVE')
+                - dose_unit (str): Unit of dose (e.g., 'GY', 'CGY')
+                - dose_summation_type (str): Type of dose summation (e.g., 'PLAN', 'BEAM')
+                - pixel_data (np.ndarray): Optional numpy array containing dose grid data
+                - referenced_beam_numbers (List[int]): List of beam numbers this dose references
 
         Relationships:
-            dose_grid (DoseGrid or None): The parent DoseGrid to which this Dose belongs (many-to-one).
-            beam (Beam or None): The parent Beam to which this Dose belongs (many-to-one, for beam dose).
-            trial (Trial or None): The parent Trial to which this Dose belongs (many-to-one, for trial dose).
-            max_dose_point (MaxDosePoint): The associated MaxDosePoint (one-to-one).
+            dose_grid (DoseGrid): Parent DoseGrid containing spatial information (many-to-one).
+            beam (Beam): Associated Beam for beam-specific doses (many-to-one, optional).
+            trial (Trial): Associated Trial for trial-level doses (many-to-one, optional).
+            max_dose_point (MaxDosePoint): Point of maximum dose (one-to-one).
+
+        Example:
+            >>> dose = Dose(
+            ...     dose_id='D1',
+            ...     dose_type='PHYSICAL',
+            ...     dose_unit='GY',
+            ...     dose_summation_type='PLAN',
+            ...     pixel_data=np.zeros((100, 100, 50)),
+            ...     referenced_beam_numbers=[1, 2, 3]
+            ... )
         """
         # Handle referenced_beam_numbers if provided. These are stored as a comma-separated list of integers in the database
         beam_numbers = kwargs.pop("referenced_beam_numbers", None)
@@ -307,11 +345,25 @@ class Dose(PinnacleBase):
 
 
 class MaxDosePoint(PinnacleBase):
-    """
-    Model representing the maximum dose point for a treatment trial.
+    """Model representing the maximum dose point in a dose distribution.
 
-    This class stores information about the maximum dose point for a treatment trial,
-    including the color and display settings.
+    This class stores the spatial location and properties of the point receiving
+    the maximum dose in a treatment plan, beam, or trial. It includes display
+    properties for visualization and references to the associated dose and beam.
+
+    Attributes:
+        color (str): RGB color string for display (e.g., '255,0,0' for red).
+        display_2d (str): Display settings for 2D views.
+        dose_value (float): The maximum dose value at this point.
+        dose_units (str): Units of the dose value (e.g., 'GY').
+        location_x (float): X-coordinate of the maximum dose point in mm.
+        location_y (float): Y-coordinate of the maximum dose point in mm.
+        location_z (float): Z-coordinate of the maximum dose point in mm.
+
+    Relationships:
+        beam (Beam): The Beam associated with this maximum dose point (many-to-one).
+        dose (Dose): The parent Dose containing this point (many-to-one).
+        trial (Trial): The parent Trial for this point (many-to-one).
     """
 
     __tablename__ = "MaxDosePoint"
@@ -350,16 +402,34 @@ class MaxDosePoint(PinnacleBase):
             dose = "None"
         return f"<MaxDosePoint(id={self.id}, color={color}, dose={dose})>"
 
-    def __init__(self, **kwargs):
-        """
-        Initialize a MaxDosePoint instance.
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a MaxDosePoint instance with optional attributes.
 
         Args:
-            **kwargs: Keyword arguments used to initialize MaxDosePoint attributes.
+            **kwargs: Keyword arguments to initialize MaxDosePoint attributes.
+                Common attributes include:
+                - color (str): RGB color string for display
+                - dose_value (float): Maximum dose value
+                - location_x (float): X-coordinate in mm
+                - location_y (float): Y-coordinate in mm
+                - location_z (float): Z-coordinate in mm
+                - beam_id (int): ID of associated Beam
+                - dose_id (int): ID of parent Dose
+                - trial_id (int): ID of parent Trial
 
         Relationships:
-            beam (Beam): The parent Beam to which this MaxDosePoint belongs (many-to-one).
-            dose (Dose): The parent Dose to which this MaxDosePoint belongs (many-to-one).
-            trial (Trial): The parent Trial to which this MaxDosePoint belongs (many-to-one).
+            beam (Beam): Associated Beam (many-to-one).
+            dose (Dose): Parent Dose (many-to-one).
+            trial (Trial): Parent Trial (many-to-one).
+
+        Example:
+            >>> max_point = MaxDosePoint(
+            ...     color='255,0,0',
+            ...     dose_value=72.5,
+            ...     dose_units='GY',
+            ...     location_x=10.5,
+            ...     location_y=-5.2,
+            ...     location_z=15.8
+            ... )
         """
         super().__init__(**kwargs)

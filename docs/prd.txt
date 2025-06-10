@@ -1,0 +1,164 @@
+# Overview
+pinnacle_io is a Python library designed to provide reliable, local-use functionality for reading and writing Pinnacle treatment planning system files. It serves researchers, medical physicists, and developers who need to work with Pinnacle data structures programmatically. The library solves the challenge of interacting with Pinnacle's complex file formats by providing an intuitive, Pythonic interface through SQLAlchemy ORM-style models.
+
+# Core Features
+
+## File Parsing and Writing
+- Comprehensive parsing of Pinnacle structured text files (.header, .ImageInfo, .PatientInfo, etc.)
+- Binary dose grid file handling
+- Writing capabilities to generate Pinnacle-compatible text files
+- File format settings management (indentation, encoding)
+
+## Data Model Representation
+- SQLAlchemy ORM-style models for all major components
+- Complete coverage of patient data structures
+- Treatment planning components (Plan, Trial, Point, ROI)
+- Machine configuration management
+- Treatment delivery details
+- Imaging and dosimetry data structures
+
+## Utility Functions
+- Data extraction and processing tools
+- Specialized data conversion utilities
+- Patient enumeration and status tracking
+- Common file format handling
+
+# User Experience
+
+## User Personas
+1. Medical Physicists
+   - Need to analyze treatment plans
+   - Extract dose information
+   - Verify machine configurations
+
+2. Research Scientists
+   - Batch processing of patient data
+   - Statistical analysis of treatment outcomes
+   - Development of new treatment approaches
+
+3. Software Developers
+   - Integration with other healthcare systems
+   - Custom tool development
+   - Automation of workflows
+
+## Key User Flows
+1. Reading and parsing Pinnacle files
+2. Accessing and modifying treatment plan data
+3. Generating new Pinnacle-compatible files
+4. Processing binary dose grid information
+
+## UI/UX Considerations
+- Planned GUI support for Institution file visualization
+- Interactive navigation of Patients and Plans
+- Future consideration for drag-and-drop support
+
+# Technical Architecture
+
+## System Components
+1. Core Library
+   - File readers and writers
+   - Data models
+   - Utility functions
+
+2. Testing Framework
+   - Comprehensive pytest suite
+   - Test data structures
+   - Edge case coverage
+
+## Data Models
+- Hierarchical structure following Pinnacle's data organization
+- SQLAlchemy ORM-style implementation
+- Comprehensive relationship mapping
+
+## Technical Requirements
+- Python 3.9+
+- No external database dependencies
+- Local file system operations only
+
+# Development Roadmap
+
+## Phase 1: Foundation (MVP)
+1. Core data models implementation
+2. Basic file reading capabilities
+3. Essential utility functions
+4. Initial test framework
+
+## Phase 2: Writing Capabilities
+1. File writers for all supported formats
+2. Validation systems
+3. Format compatibility checks
+
+## Phase 3: Enhanced Features
+1. GUI development for file visualization
+2. Advanced data processing tools
+3. Performance optimizations
+
+## Phase 4: Future Enhancements
+1. Visualization tools for image slices and ROIs
+2. Extended utility functions
+3. Additional format support
+
+# Logical Dependency Chain
+
+1. Core Framework
+   - Base models and utilities
+   - File reading infrastructure
+   - Testing foundation
+
+2. Data Processing
+   - Writers implementation
+   - Validation systems
+   - Binary data handling
+
+3. User Interface
+   - Basic GUI components
+   - File visualization
+   - Interactive features
+
+# Risks and Mitigations
+
+## Technical Challenges
+1. Binary file format complexity
+   - Mitigation: Thorough documentation and testing
+   - Robust error handling
+
+2. Data integrity
+   - Validation systems
+   - Comprehensive test coverage
+   - Version control considerations
+
+## Resource Constraints
+1. Development effort
+   - Modular design for incremental implementation
+   - Clear prioritization of features
+
+2. Testing resources
+   - Automated testing framework
+   - Representative test data sets
+
+# Appendix
+
+## Technical Specifications
+- Supported file formats: 
+    - Institution
+    - Patient
+    - ImageSet_#.header
+    - ImageSet_#.ImageInfo
+    - plan.PatientSetup
+    - plan.Pinnacle.Machines
+    - plan.Points
+    - plan.roi
+    - plan.Trial
+    - plan.Trial.binary.###
+- Python version compatibility: 3.9+
+- Installation: pip install -e .
+
+## Research Findings
+- Pinnacle file structure analysis
+- Common use cases and requirements
+- Performance considerations
+
+## Out of Scope Items
+- Persistent database integration
+- DICOM compatibility
+- Remote file handling

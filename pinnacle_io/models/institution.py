@@ -4,7 +4,7 @@ SQLAlchemy model for Pinnacle Institution data.
 
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import Mapped, relationship
-from typing import Optional
+from typing import Any, Optional
 
 from pinnacle_io.models.versioned_base import VersionedBase
 
@@ -14,9 +14,31 @@ from pinnacle_io.models.patient_lite import PatientLite
 
 class Institution(VersionedBase):
     """
-    Represents a Pinnacle Institution.
+    Model representing a Pinnacle Institution.
 
-    This is typically the top-level entity in the Pinnacle hierarchy.
+    This class serves as the top-level organizational entity in the Pinnacle system,
+    containing all related patient data, treatment plans, and institutional settings.
+    It represents a medical institution or department using the Pinnacle system.
+
+    Attributes:
+        id (int): Primary key
+        institution_id (int): Institution ID from Pinnacle
+        institution_path (str): Filesystem path to the institution data
+        name (str): Name of the institution
+        street_address (str): Primary street address
+        city (str): City name
+        state (str): State/province
+        zip_code (str): Postal/ZIP code
+        country (str): Country name
+        
+    Relationships:
+        patient_lite_list (List[PatientLite]): List of lightweight patient records
+        patient_list (List[Patient]): List of detailed patient records
+    
+    Backup and Storage Attributes:
+        device_space_required_* (int): Space requirements for different data types
+        default_mount_point (str): Default mount point for data storage
+        backup_* (various): Backup configuration and status fields
     """
 
     __tablename__ = "Institution"
@@ -119,16 +141,22 @@ class Institution(VersionedBase):
         lazy="dynamic",
     )
 
-    def __init__(self, **kwargs):
-        """
-        Initialize an Institution instance.
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize an Institution instance.
 
         Args:
             **kwargs: Keyword arguments used to initialize Institution attributes.
-
-        Relationships:
-            patient_lite_list (list[PatientLite]): List of PatientLite objects associated with this institution (one-to-many).
-            patients (list[Patient]): List of Patient objects associated with this institution (one-to-many).
+                     Valid attributes include all column names and relationship names.
+                     
+        Example:
+            >>> inst = Institution(
+            ...     name="Example Medical Center",
+            ...     street_address="123 Main St",
+            ...     city="Anytown",
+            ...     state="CA",
+            ...     zip_code="12345",
+            ...     country="USA"
+            ... )
         """
         super().__init__(**kwargs)
 

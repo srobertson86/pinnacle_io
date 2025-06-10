@@ -135,14 +135,14 @@ def test_get_jaw_positions():
     control_point = ControlPoint(
         left_jaw_position=-10.0,
         right_jaw_position=10.0,
-        top_jaw_position=15.0,
         bottom_jaw_position=-15.0,
+        top_jaw_position=15.0,
     )
 
     jaw_positions = control_point.get_jaw_positions()
     assert isinstance(jaw_positions, tuple)
     assert len(jaw_positions) == 4
-    assert jaw_positions == (-10.0, 10.0, 15.0, -15.0)
+    assert jaw_positions == (-10.0, 10.0, -15.0, 15.0)
 
 
 def test_get_field_size():

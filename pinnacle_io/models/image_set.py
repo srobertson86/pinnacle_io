@@ -1,56 +1,71 @@
 """
 SQLAlchemy model for Pinnacle ImageSet data.
+
+This module provides the ImageSet data model for representing medical image sets (CT, MR, etc.) in Pinnacle,
+including all image-specific parameters, relationships to image info, and associated patient data.
 """
 
+from __future__ import annotations
 from typing import Optional, List, Tuple, TYPE_CHECKING
+import warnings
+
+import numpy as np
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, LargeBinary
 from sqlalchemy.orm import Mapped, relationship
 
 from pinnacle_io.models.pinnacle_base import PinnacleBase
 from pinnacle_io.models.types import JsonList
-import warnings
-import numpy as np
-from pinnacle_io.models.patient import Patient
 
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:
     from pinnacle_io.models.image_info import ImageInfo
     from pinnacle_io.models.plan import Plan
+    from pinnacle_io.models.patient import Patient
 
 
 class ImageSet(PinnacleBase):
     """
-    Model representing an image set (CT, MR, etc.).
+    Model representing an image set (CT, MR, etc.) in Pinnacle.
 
     This class stores all image-specific information needed for DICOM conversion,
-    including dimensions, pixel spacing, and image orientation.
+    including dimensions, pixel spacing, and image orientation. It serves as the
+    central model for image data in the Pinnacle I/O system.
+
+    Attributes:
+        id (int): Primary key
+        series_uid (str): DICOM Series Instance UID
+        study_uid (str): DICOM Study Instance UID
+        modality (str): Imaging modality (e.g., "CT", "MR")
+        image_name (str): Name of the image set
+        x_dim (int): Number of pixels in X dimension
+        y_dim (int): Number of pixels in Y dimension
+        z_dim (int): Number of slices in Z dimension
+        x_pixdim (float): Pixel spacing in X dimension (mm)
+        y_pixdim (float): Pixel spacing in Y dimension (mm)
+        z_pixdim (float): Slice thickness in Z dimension (mm)
+        pixel_data (bytes): Raw pixel data as bytes
+        
+    Relationships:
+        patient (Patient): The patient this image set belongs to
+        image_info_list (List[ImageInfo]): List of ImageInfo objects with per-slice information
+        plan_list (List[Plan]): List of plans that use this image set as primary CT
     """
 
     __tablename__ = "ImageSet"
 
-    # Primary key is inherited from PinnacleBase
+    # Identification and basic info
     series_uid: Mapped[Optional[str]] = Column("SeriesUID", String, nullable=True)
     study_uid: Mapped[Optional[str]] = Column("StudyUID", String, nullable=True)
-    series_number: Mapped[Optional[int]] = Column(
-        "SeriesNumber", Integer, nullable=True
-    )
-    acquisition_number: Mapped[Optional[int]] = Column(
-        "AcquisitionNumber", Integer, nullable=True
-    )
+    series_number: Mapped[Optional[int]] = Column("SeriesNumber", Integer, nullable=True)
+    acquisition_number: Mapped[Optional[int]] = Column("AcquisitionNumber", Integer, nullable=True)
 
-    # Patient information
-    image_set_id: Mapped[Optional[int]] = Column(
-        "ImageSetID", Integer, nullable=True
-    )  # From the Patient file. Not the primary key.
+    # Image information
+    image_set_id: Mapped[Optional[int]] = Column("ImageSetID", Integer, nullable=True)  # From the Patient file. Not the primary key.
     image_name: Mapped[Optional[str]] = Column("ImageName", String, nullable=True)
-    name_from_scanner: Mapped[Optional[str]] = Column(
-        "NameFromScanner", String, nullable=True
-    )
+    name_from_scanner: Mapped[Optional[str]] = Column("NameFromScanner", String, nullable=True)
     exam_id: Mapped[Optional[str]] = Column("ExamID", String, nullable=True)
     study_id: Mapped[Optional[str]] = Column("StudyID", String, nullable=True)
-    modality: Mapped[Optional[str]] = Column(
-        "Modality", String, nullable=True
-    )  # CT, MR, etc.
+    modality: Mapped[Optional[str]] = Column("Modality", String, nullable=True)  # CT, MR, etc.
     modality_type: Mapped[Optional[str]] = Column("ModalityType", String, nullable=True)
     number_of_images: Mapped[Optional[int]] = Column(
         "NumberOfImages", Integer, nullable=True
@@ -182,21 +197,23 @@ class ImageSet(PinnacleBase):
     # Pixel data - stored separately as binary data
     pixel_data: Mapped[bytes] = Column("PixelData", LargeBinary, nullable=True)
 
-    # Parent relationship
+    # Relationships
     patient_id: Mapped[int] = Column("PatientID", Integer, ForeignKey("Patient.ID"))
-    patient: Mapped["Patient"] = relationship(
-        "Patient", back_populates="image_set_list"
+    patient: Mapped["Patient"] = relationship("Patient", back_populates="image_set_list")
+    
+    image_info_list: Mapped[List["ImageInfo"]] = relationship(
+        "ImageInfo", 
+        back_populates="image_set", 
+        cascade="all, delete-orphan",
+        lazy="selectin"  # Use selectin loading for better performance
     )
-
-    # Child relationships
-    image_info_list: Mapped[list["ImageInfo"]] = relationship(
-        "ImageInfo", back_populates="image_set", cascade="all, delete-orphan"
-    )
-    plan_list: Mapped[list["Plan"]] = relationship(
+    
+    plan_list: Mapped[List["Plan"]] = relationship(
         "Plan",
         back_populates="primary_ct_image_set",
         foreign_keys="Plan.primary_ct_image_set_id",
         primaryjoin="ImageSet.id == Plan.primary_ct_image_set_id",
+        lazy="selectin"  # Use selectin loading for better performance
     )
 
     def __init__(self, pixel_data: Optional[np.ndarray] = None, **kwargs):

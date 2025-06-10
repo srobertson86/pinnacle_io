@@ -4,10 +4,12 @@ SQLAlchemy model for Pinnacle Dose Engine data.
 This module provides the Dose Engine data models for representing dose engine configuration.
 """
 
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Any, Dict
 
 from sqlalchemy import Column, String, Integer, ForeignKey, Float
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship, Session
 
 from pinnacle_io.models.pinnacle_base import PinnacleBase
 
@@ -17,10 +19,61 @@ if TYPE_CHECKING:
 
 class DoseEngine(PinnacleBase):
     """
-    Model representing a dose engine configuration.
+    Model representing a dose engine configuration in the Pinnacle treatment planning system.
 
     This class stores all dose engine-specific information needed for DICOM conversion,
-    including type, convolution settings, and statistics tracking.
+    including type, convolution settings, and statistics tracking. Each DoseEngine instance
+    is associated with exactly one Beam.
+
+    Attributes:
+        id (int): Primary key (inherited from PinnacleBase)
+        type_name (Optional[str]): Type of the dose engine
+        convolve_homogeneous (Optional[int]): Flag for homogeneous convolution
+        fluence_homogeneous (Optional[int]): Flag for homogeneous fluence
+        flat_water_phantom (Optional[int]): Flag for flat water phantom
+        flat_homogeneous (Optional[int]): Flag for flat homogeneous
+        electron_homogeneous (Optional[int]): Flag for electron homogeneous
+        fluence_type (Optional[str]): Type of fluence calculation
+        long_step_tuning_factor (Optional[float]): Tuning factor for long steps
+        short_step_length (Optional[float]): Length of short steps
+        number_of_short_steps (Optional[int]): Count of short steps
+        split_fluence_field_size_cutoff (Optional[int]): Field size cutoff for split fluence
+        azimuthal_bin_count (Optional[int]): Number of azimuthal bins
+        zenith_bin_count (Optional[int]): Number of zenith bins
+        cum_kernel_radial_bin_width (Optional[float]): Radial bin width for cumulative kernel
+        siddon_corner_cutoff (Optional[float]): Cutoff for Siddon corner detection
+        nrd_bin_width (Optional[float]): NRD bin width
+        allowable_dose_diff (Optional[float]): Allowed dose difference
+        high_fluence_cutoff (Optional[float]): High fluence cutoff value
+        low_first_deriv_cutoff (Optional[float]): Low first derivative cutoff
+        low_second_deriv_cutoff (Optional[float]): Low second derivative cutoff
+        high_first_deriv_cutoff (Optional[float]): High first derivative cutoff
+        high_second_deriv_cutoff (Optional[float]): High second derivative cutoff
+        adaptive_levels (Optional[int]): Number of adaptive levels
+        energy_flatness_cutoff (Optional[float]): Energy flatness cutoff
+        energy_flatness_minimum_distance (Optional[float]): Minimum distance for energy flatness
+        energy_flatness_scaling_distance (Optional[float]): Scaling distance for energy flatness
+        energy_flatness_power (Optional[float]): Power for energy flatness calculation
+        restart_index (Optional[int]): Index for restarting calculations
+        samples_per_batch (Optional[int]): Number of samples per batch
+        number_of_histories_goal (Optional[float]): Target number of histories
+        uncertainty_goal (Optional[float]): Target uncertainty level
+        max_seconds (Optional[float]): Maximum calculation time in seconds
+        completed_histories (Optional[int]): Number of completed histories
+        dose_uncertainty (Optional[float]): Current dose uncertainty
+        percent_done (Optional[float]): Completion percentage
+        elapsed_seconds (Optional[float]): Elapsed time in seconds
+        elapsed_cpu_seconds (Optional[float]): CPU time used in seconds
+        cpu_percent_utilization (Optional[float]): CPU utilization percentage
+        print_batch_files (Optional[int]): Flag for printing batch files
+        print_data_file (Optional[int]): Flag for printing data files
+        print_event_file (Optional[int]): Flag for printing event files
+        print_track_file (Optional[int]): Flag for printing track files
+        statistics_outside_roi (Optional[int]): Flag for including statistics outside ROI
+        
+    Relationships:
+        beam (Beam): The parent Beam to which this DoseEngine belongs (many-to-one).
+                     Back-populates to Beam.dose_engine.
     """
 
     __tablename__ = "DoseEngine"
@@ -146,24 +199,39 @@ class DoseEngine(PinnacleBase):
         "StatisticsOutsideRoi", Integer, nullable=True
     )
 
-    # Parent relationship
-    beam_id: Mapped[int] = Column("BeamID", Integer, ForeignKey("Beam.ID"))
-    beam: Mapped["Beam"] = relationship("Beam", back_populates="dose_engine")
+    # Parent relationship with back-population to Beam.dose_engine
+    beam_id: Mapped[int] = Column("BeamID", Integer, ForeignKey("Beam.ID"), nullable=False)
+    beam: Mapped["Beam"] = relationship(
+        "Beam", 
+        back_populates="dose_engine",
+        single_parent=True,
+        cascade="all, delete-orphan"
+    )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
-        Initialize a DoseEngine instance.
+        Initialize a DoseEngine instance with the given parameters.
 
         Args:
-            **kwargs: Keyword arguments used to initialize DoseEngine attributes.
-
-        Relationships:
-            beam (Beam): The parent Beam to which this DoseEngine belongs (many-to-one).
+            **kwargs: Keyword arguments corresponding to model attributes.
+                Supported keyword arguments include all column names as attributes and:
+                - beam (Beam): The parent Beam to which this DoseEngine belongs.
         """
+        # Initialize parent class with all keyword arguments
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
         """
         Return a string representation of this dose engine.
+
+        Returns:
+            str: A string representation in the format:
+                <DoseEngine(id=X, beam='beam_name', type_name='type')>
         """
-        return f"<DoseEngine(id={self.id}, beam='{self.beam.name if self.beam else 'None'}', type_name='{self.type_name}')>"
+        beam_name = getattr(getattr(self, 'beam', ''), 'name', '')
+        return (
+            f"<DoseEngine(id={self.id}, "
+            f"beam='{beam_name}', "
+            f"type_name='{self.type_name}')>"
+        )
+    
